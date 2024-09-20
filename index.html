@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medication Dose Calculator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Medication Dose Calculator</h1>
+        
+        <form id="dose-form">
+            <label for="medication">Select Medication:</label>
+            <select id="medication" name="medication" onchange="updateFields()">
+                <option value="">Select a medication</option>
+                {% for key, med in medications.items() %}
+                    <option value="{{ med['name'] }}"
+                        data-dose="{{ med['dose_per_kg'] }}"
+                        data-concentration="{{ med['concentration'] }}">
+                        {{ med['name'] }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <label for="weight">Weight (kg):</label>
+            <input type="number" id="weight" name="weight" required>
+
+            <label for="dose_per_kg">Dose (mg/kg):</label>
+            <input type="number" id="dose_per_kg" name="dose_per_kg" readonly>
+
+            <label for="concentration">Concentration (mg/ml):</label>
+            <input type="number" id="concentration" name="concentration" readonly>
+
+            <button type="submit">Calculate</button>
+        </form>
+
+        <div id="result">
+            <p>Dose and volume will appear here.</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('dose-form').onsubmit = function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            fetch('/calculate', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('result').innerHTML = `<p>${data.error}</p>`;
+                } else {
+                    document.getElementById('result').innerHTML = `
+                        <p>Total Dose: ${data.total_dose} mg</p>
+                        <p>Volume Required: ${data.volume_required} ml</p>
+                    `;
+                }
+            });
+        };
+
+        function updateFields() {
+            const medication = document.getElementById('medication');
+            const selectedOption = medication.options[medication.selectedIndex];
+
+            document.getElementById('dose_per_kg').value = selectedOption.getAttribute('data-dose');
+            document.getElementById('concentration').value = selectedOption.getAttribute('data-concentration');
+        }
+    </script>
+</body>
+</html>
